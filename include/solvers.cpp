@@ -3,6 +3,12 @@
 
 namespace solvers{
 
+  std::vector<double> rk4(std::vector<double> state, const double stepsize, std::vector<double>(*f)(std::vector<double>)) {
+    std::vector<double> k_1 = f(state);
+    std::vector<double> k_2 = f(state);
+
+  }
+
   std::vector<double> rk4_coup(std::vector<double> state, const double stepsize, double (*f1)(std::vector<double>), double (*f2)(std::vector<double>)) {
     double k_1 = stepsize*f1(state);
     double k_2 = stepsize*f2(state);
@@ -32,3 +38,4 @@ namespace solvers{
 
 
 }
+
