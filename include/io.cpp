@@ -126,6 +126,11 @@ namespace io {
     // Relay to user
     std::cout << " Reading input file: " << term::bold <<  io_filename << term::reset << std::endl << std::endl;
 
+
+
+    bool mat_num_b  = false;
+
+
     std::vector<int> mat_id_array; // Track all material IDs
 
     // Read file line by line
@@ -141,6 +146,7 @@ namespace io {
 
       // Split the input line into property and value strings
       // Value is a string as it is not known whether it is a double or a vector at this point
+      std::string mat_id_s = line.substr(line.find("[")+1, line.find("]")-line.find("[")-1);
       std::string property_s = line.substr(line.find(":")+1, line.find("=")-line.find(":")-1);
       std::string value_s = line.substr(line.find("=")+1, *line.end()-line.find("=")-1);
 
@@ -151,60 +157,58 @@ namespace io {
       }
 
       // Handle material ID
-      int mat_id = std::stoi(line.substr(line.find("[")+1, line.find("]")-line.find("[")-1));
-      bool mat_exists = std::any_of(mat_id_array.begin(), mat_id_array.end(), [&](int i) { return i == mat_id; });
-
-      if(!mat_exists){       // Insert material ID if not known
-        // Warn user if unusually large material ID is encountered
-        if (io_debug) {
-          if(mat_id!=0 && mat_id>*std::max_element(mat_id_array.begin(), mat_id_array.end())+1) {
-            std::cout << term::bold
-                      << term::fg_yellow << " Warning: "
-                      << term::fg_white << io_filename << ":" << line_num << ": "
-                      << term::reset << "Material ID seems large. "
-                      << term::bold << "(" << mat_id << " >> "
-                      << *std::max_element(mat_id_array.begin(), mat_id_array.end()) << ")"
-                      << term::reset << std::endl;
-          }
+      try {
+        int mat_id = std::stoi(mat_id_s); // Convert string to integer ID
+        if (mat_id < 0 || mat_id >= sys::system.mat_num()) { // ID out of material range
+          std::cout << term::bold << term::fg_yellow << " Warning: "
+                    << term::fg_white << io_filename << ":" << line_num << ": "
+                    << term::reset << "Invalid material ID value (out of range) '"
+                    << term::bold << mat_id_s << term::reset << "'"
+                    << std::endl;
+          continue;
         }
-        std::cout << " Adding material: " << mat_id << std::endl;
-        mat_id_array.push_back(mat_id); // Push material ID to back of vector
-        sys::system.add_mat(mat_id);    // Add new material to system
+        bool mat_exists = std::any_of(mat_id_array.begin(), mat_id_array.end(), [&](int i) { return i == mat_id; });
+
+        if(!mat_exists){       // Insert material ID if not known
+          // Warn user if unusually large material ID is encountered
+          if (io_debug) {
+            if(mat_id!=0 && mat_id>*std::max_element(mat_id_array.begin(), mat_id_array.end())+1) {
+              std::cout << term::bold
+                        << term::fg_yellow << " Warning: "
+                        << term::fg_white << io_filename << ":" << line_num << ": "
+                        << term::reset << "Material ID seems large. "
+                        << term::bold << "(" << mat_id << " >> "
+                        << *std::max_element(mat_id_array.begin(), mat_id_array.end()) << ")"
+                        << term::reset << std::endl;
+            }
+          }
+          std::cout << " Adding material: " << mat_id << std::endl;
+          mat_id_array.push_back(mat_id); // Push material ID to back of vector
+        }
+
+        // Set relevant property
+        sys::system.set_mat_prop(mat_id, property_s, value_s);
       }
 
-      // Set relevant property
-      sys::system.set_mat_prop(mat_id, property_s, value_s);
-
+      catch (const std::invalid_argument& e) { // Non-number value
+        std::cout << term::bold << term::fg_yellow << " Warning: "
+                  << term::fg_white << io_filename << ":" << line_num << ": "
+                  << term::reset << "Invalid material ID value '"
+                  << term::bold << mat_id_s << term::reset << "'"
+                  << std::endl;
+      }
+    }
+    if (mat_id_array.size() != sys::system.mat_num()) {
+      std::cout << std::endl;
+      std::cout << term::bold << term::fg_yellow
+                << " Warning: " << term::reset << "mat_num mismatch" << std::endl;
+      std::cout << " ----------------------------" << std::endl;
+      std::cout << " Expected:    " << term::bold << sys::system.mat_num() << term::reset << std::endl;
+      std::cout << " Encountered: " << term::bold << mat_id_array.size() << term::reset << std::endl;
+      std::cout << std::endl;
+      exit(EXIT_FAILURE);
     }
   }
-  //   std::string in_flag, in_unit_flag;
-
-  //   in >> in_flag; // Take first string before whitespace, i.e. flag
-
-  //   // Assign variables based on flag
-  //   if(in_flag == "je"|| in_flag == "j_e" || in_flag == "electric_current" || in_flag == "electric-current" ) {
-  //     in >> electric_current; // Value
-  //   }
-
-  //   if(in_flag == "xu"|| in_flag == "x_upper" || in_flag == "upper_bound" || in_flag == "upper-bound" ) {
-  //     in >> int material_id
-  //     in >> electric_current; // Value
-  //   }
-
-
-
-  //       if(maj_ax <= 0) { // Check for physical values
-  //         std::cout << "\033[1;31m Error: Major axis \033[1;39m" << maj_ax <<  "\033[1;31m <= 0\033[0;39m" << std::endl;
-  //         exit(EXIT_FAILURE);
-  //       }
-  //       maj_ax_flag = true;
-  //     }
-  //     else {
-  //       std::cout << term::bold << term::fg_red << " Error: Not enough system parameters given" << term::reset << std::endl;
-  //                                                                                                                 exit(EXIT_FAILURE);
-  //     }
-  //   }
-  // }
   //   // Converts string unit input to exponent
   //   double io_unit(std::string io_unit_flag) {
   //     // Check variations for some quality of life

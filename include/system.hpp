@@ -32,10 +32,12 @@ namespace sys{
   public:
     system_t();
     void set_param(std::string property_s, std::string value_s);
+    int mat_num();
     void add_mat(int mat_id);
     void set_mat_prop(int mat_id, std::string property_s, std::string value_s);
     void enumerate_mats();
-    void prop_init(int system_len);
+    void prop_init();
+    void system_out();
   private:
     // Materials
     std::vector<mat::material> materials;

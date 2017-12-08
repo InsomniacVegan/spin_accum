@@ -1,4 +1,6 @@
-system:dx = 1.0e-9
+# Begin with system parameters
+system:mat_num = 2
+system:dx = 1.0e-11
 
 # Left material: NM
 material[0]:lower_bound      = 0.0e-09
@@ -13,7 +15,7 @@ material[0]:len_dephase      = 1.0e-20
 material[0]:len_spin_flip    = 2.0e-08
 material[0]:len_diff         = 0.0
 
-# Left-centere material: FM
+# Left-center material: FM
 material[1]:lower_bound      = 10.0e-09
 material[1]:upper_bound      = 50.0e-09
 material[1]:magnetization    = [0.0, 0.0, 1.0]

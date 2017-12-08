@@ -22,11 +22,10 @@
 
 namespace mat {
   struct material {
-    int id;
     double lower_bound;
     double upper_bound;
     std::vector<double> mag;
-    double diff_len;
+    double len_diff;
 
     // Scalar properties
     // Properties indexing

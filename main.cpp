@@ -22,7 +22,6 @@
 #include "catch.hpp"
 
 // Personal modules
-#include "catch.hpp"
 #include "io.hpp"
 #include "system.hpp"
 
@@ -47,9 +46,7 @@ int main(int argc, char *argv[]) {
       io::io_read_file(argc, argv);
 
       // System intialization
-
-
-
+      //sys::system.enumerate_mats();
 
       // EVOLVE
 
@@ -63,6 +60,8 @@ int main(int argc, char *argv[]) {
     break;
   }
 
+  sys::system.prop_init();
+  sys::system.system_out();
 
 
 
