@@ -37,6 +37,7 @@ namespace sys{
     void set_mat_prop(int mat_id, std::string property_s, std::string value_s);
     void enumerate_mats();
     void prop_init();
+    void iface_init();
     void system_out();
   private:
     // Materials
@@ -65,12 +66,20 @@ namespace sys{
 
     // Direct system parameters
     // --------------------------------------------------
+    // Integer
+    // [0] Number of materials
+    // [1] Interface condition
+    // --------------------------------------------------
+    // Double
     // [0] Space discretization
     // [1] Time discretization
     // [2] Target time
     // [3] Electrical current
-    std::vector<std::string> params_s;
-    std::vector<double> params;
+    std::vector<int> params_i;
+    std::vector<std::string> params_i_s;
+
+    std::vector<double> params_d;
+    std::vector<std::string> params_d_s;
   };
 
   extern system_t system;

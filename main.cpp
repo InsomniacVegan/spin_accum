@@ -40,27 +40,24 @@ int main(int argc, char *argv[]) {
   // Input file mode
   case 0:
     {
-      // TESTING
-
-      // READ FILE HERE
+      // Read input file
       io::io_read_file(argc, argv);
 
-      // System intialization
-      //sys::system.enumerate_mats();
-
-      // EVOLVE
-
-    break;
+      break;
     }
 
   // Test mode
   case 1:
-
-
     break;
   }
 
+  // System initialization
+  // ----------------------------------------------------
+  // Initialize system properties
+  // Apply interface conditions
+  // Write system configuration to file
   sys::system.prop_init();
+  sys::system.iface_init();
   sys::system.system_out();
 
 

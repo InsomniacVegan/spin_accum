@@ -40,8 +40,8 @@ namespace io {
     std::cout << " Author: Luker Elliott" << std::endl;
     std::cout << " Email:  " << term::bold << "lee506@york.ac.uk" << term::reset << std::endl << std::endl;
     std::cout << " Test code for simulating the spin accumulation across" << std::endl;
-    std::cout << " a given system, assumed to be a spin valve/tunnel ju-" << std::endl;
-    std::cout << " nction." << std::endl << std::endl;
+    std::cout << " a given 1D system,  assumed to be a spin valve/tunnel " << std::endl;
+    std::cout << " junction." << std::endl << std::endl;
     std::cout << " GNU GPLv3. See LICENSE for details." << std::endl;
     std::cout << " ======================================================" << std::endl << std::endl;
   }

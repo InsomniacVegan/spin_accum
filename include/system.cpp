@@ -5,8 +5,8 @@
 //  Email: lee506@york.ac.uk
 //
 //  Test code for simulating the spin accumulation across
-//  a given magnetic system, assumed to be a spin valve/tunnel ju-
-//  nction.
+//  a given 1Dmagnetic system, assumed to be a spin valve/tunnel
+//  junction.
 //
 //  File: system.cpp
 //
@@ -34,33 +34,44 @@ namespace sys{
 
   // System constructor
   system_t::system_t() {
-    params_s = {"dx", "dt", "T", "j_e", "mat_num"};
-    params.resize(params_s.size());
+    params_d_s = {"dx", "dt", "T", "j_e"};
+    params_d.resize(params_d_s.size());
+
+    params_i_s = {"mat_num", "iface"};
+    params_i.resize(params_i_s.size());
   }
 
-
+  // Takes a parameter name and value as strings and sets the value
   void system_t::set_param(std::string property_s, std::string value_s) {
-    auto prop_id = std::find(params_s.begin(), params_s.end(), property_s);
-    if (prop_id != params_s.end()){
-      params[prop_id-params_s.begin()] = std::stod(value_s);
-      if (property_s == "mat_num") {
-        materials.resize(std::stod(value_s));
-        for (int i=0; i<materials.size(); i++) materials[i].scal_prop.resize(mat::scal_prop_s.size());
-      }
+    auto prop_id = std::find(params_d_s.begin(), params_d_s.end(), property_s);
+    if (prop_id != params_d_s.end()){
+      params_d[prop_id-params_d_s.begin()] = std::stod(value_s);
+
+
     }
-    else std::cout << term::bold << term::fg_yellow << " Unknown system parameter: "
-                   << term::reset << property_s << std::endl;
+
+    else {
+      prop_id = std::find(params_i_s.begin(), params_i_s.end(), property_s);
+      if (prop_id != params_i_s.end()){
+        params_i[prop_id-params_i_s.begin()] = std::stoi(value_s);
+
+        // Special handling for number of materials
+        if (property_s == "mat_num") {
+          materials.resize(std::stoi(value_s));
+          for (int i=0; i<materials.size(); i++) materials[i].scal_prop.resize(mat::scal_prop_s.size());
+        }
+      }
+
+      else std::cout << term::bold << term::fg_yellow << " Unknown system parameter: "
+                     << term::reset << property_s << std::endl;
+    }
+
   }
 
+  // Sanitized number of materials
   int system_t::mat_num() {
     return materials.size();
   }
-
-  // void system_t::add_mat(int mat_id) {
-  //   materials.push_back(mat::material ());
-  //   materials.back().id = mat_id;
-  //   materials[mat_id].scal_prop.resize(7);
-  // }
 
   // Takes a material ID and property name and sets the value of the property
   void system_t::set_mat_prop(int mat_id, std::string property_s, std::string value_s) {
@@ -103,6 +114,7 @@ namespace sys{
 
   }
 
+  // Write all materials and properties to screen
   void system_t::enumerate_mats() {
     for(int i=0; i<materials.size(); i++) {
       std::cout << std::endl;
@@ -120,7 +132,7 @@ namespace sys{
     }
   }
 
-  // System constructor
+  // Initialize system properties by resizing for system length, zeroing and then filling
   void system_t::prop_init () {
 
     // Calculate system length
@@ -133,7 +145,7 @@ namespace sys{
       if (materials[i].upper_bound>max_x) max_x = materials[i].upper_bound;
     }
 
-    int system_len = ceil((max_x-min_x)/params[0]);
+    int system_len = ceil((max_x-min_x)/params_d[0]);
 
     // Empty out all values
 
@@ -174,24 +186,97 @@ namespace sys{
 
     // Intialise properties from materials
     for (int i=0; i<materials.size(); i++) {
-      // Magnetization & diffusion
-      std::fill(mag.begin()+floor(materials[i].lower_bound/params[0]), mag.begin()+ceil(materials[i].upper_bound/params[0]), materials[i].mag);
+      int lower_bound = floor(materials[i].lower_bound/params_d[0]);
+      int upper_bound = ceil(materials[i].upper_bound/params_d[0]);
+
+      // Magnetization
+      std::fill(mag.begin()+lower_bound, mag.begin()+upper_bound+1, materials[i].mag);
+
+      // Scalar properties
       for (int j=0; j<materials[i].scal_prop.size(); j++) {
-        std::fill(scal_prop[j].begin()+floor(materials[i].lower_bound/params[0]), scal_prop[j].begin()+ceil(materials[i].upper_bound/params[0]), materials[i].scal_prop[j]);
+        std::fill(scal_prop[j].begin()+lower_bound, scal_prop[j].begin()+upper_bound+1, materials[i].scal_prop[j]);
       }
+    }
+
+  }
+
+  // Apply interface conditions to the system
+  void system_t::iface_init() {
+    switch(params_i[1]){
+
+    // Atomically smooth
+    case 0:
+      break;
+
+    // Linear increase
+    case 1:
+
+      // Bulk of system
+      for (int i=0; i<materials.size(); i++) {
+
+        // Skip materials without diffuse interface length
+        if (materials[i].len_diff <= 0) continue;
+
+        // Number of steps in each interface
+        int iface_steps = materials[i].len_diff/params_d[0];
+        int lower_bound = floor(materials[i].lower_bound/params_d[0]);
+        int upper_bound = ceil(materials[i].upper_bound/params_d[0]);
+
+        // Forward declare
+        double left_step;
+        double right_step;
+
+        for (int j=0; j<materials[i].scal_prop.size(); j++) {
+
+          if (i==0) {left_step = materials[i].scal_prop[j]/iface_steps;}
+          else {left_step = (materials[i].scal_prop[j]-materials[i-1].scal_prop[j])/iface_steps;}
+
+          if (i==materials.size()-1) {right_step = materials[i].scal_prop[j]/iface_steps;}
+          else {right_step = (materials[i+1].scal_prop[j]-materials[i].scal_prop[j])/iface_steps;}
+
+          for (int k=0; k<iface_steps; k++){
+            // Left
+            scal_prop[j][lower_bound-iface_steps+k] += (left_step*k);
+            // Right
+            scal_prop[j][+upper_bound+iface_steps-k] -= (right_step*k);
+
+          }
+
+        }
+      }
+
+      break;
+
+    // Fick's
+    case 2:
+
+      break;
     }
   }
 
+  // Write the system to file
   void system_t::system_out(){
+
+    // Open file stream
     std::ofstream out_file;
     out_file.open("system.dat");
+
+    // Step over system
     for (int i=0; i<scal_prop.front().size(); i++){
-      out_file  << i << ' ';
+
+      // Position
+      out_file  << i*params_d[0] << ' ';
+
+      // Step over properties
       for (int j=0; j<scal_prop.size(); j++) {
         out_file  << scal_prop[j][i] << ' ';
       }
+
+      // Next line
       out_file << std::endl;
     }
+
     out_file.close();
   }
+
 }
