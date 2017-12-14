@@ -39,6 +39,7 @@ namespace sys{
     void prop_init();
     void iface_init();
     void system_out();
+    void evolve();
   private:
     // Materials
     std::vector<mat::material> materials;

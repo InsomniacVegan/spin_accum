@@ -1,7 +1,10 @@
 # Begin with system parameters
 system:mat_num = 5
-system:dx = 1.0e-11
-system:iface = 1
+system:dx      = 1.0e-11
+system:dt      = 6e-21
+system:T       = 24e-21
+system:j_e     = 1e-11
+system:iface   = 1
 
 # Left material: NM
 material[0]:lower_bound      = 0.0e-09

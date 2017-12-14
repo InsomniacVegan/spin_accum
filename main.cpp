@@ -60,6 +60,7 @@ int main(int argc, char *argv[]) {
   sys::system.iface_init();
   sys::system.system_out();
 
+  sys::system.evolve();
 
 
 

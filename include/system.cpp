@@ -26,6 +26,7 @@
 #include "system.hpp"
 #include "material.hpp"
 #include "term.hpp"
+#include "physics.hpp"
 
 namespace sys{
 
@@ -277,6 +278,39 @@ namespace sys{
     }
 
     out_file.close();
+  }
+
+  // Main evolution loop
+  void system_t::evolve(){
+
+    for (int i=0; i<ceil(params_d[2]/params_d[1]); i++) {
+      // Calculate spin current across the system
+      j_m = physics::spin_curr(sa, mag, scal_prop[1], scal_prop[2], scal_prop[3], params_d[3], params_d[0]);
+
+      std::vector<std::vector<double> > dm_dt = physics::dm_dt(sa, mag, j_m, scal_prop[4], scal_prop[5], scal_prop[6], scal_prop[0], params_d[0]);
+
+      for (int k=0; k<dm_dt.size(); k++) {
+        for (int l=0; l<dm_dt[k].size(); l++){
+          dm_dt[k][l] *= params_d[1];
+          sa[k][l] += dm_dt[k][l];
+        }
+      }
+
+      // Output data here
+      std::string filename = std::to_string(i)+ ".dat";
+      std::ofstream myfile;
+      myfile.open(filename);
+      for(int k=0; k<sa.size(); k++) {
+        myfile << k*params_d[0] << ' ';
+        for(int l=0; l<sa[k].size(); l++) {
+          myfile << sa[k][l] << ' ';
+        }
+        myfile << std::endl;
+      }
+      myfile.close();
+
+    }
+
   }
 
 }
