@@ -35,7 +35,7 @@ namespace sys{
 
   // System constructor
   system_t::system_t() {
-    params_d_s = {"dx", "dt", "T", "j_e"};
+    params_d_s = {"dx", "dt", "T", "j_e", "t_ramp"};
     params_d.resize(params_d_s.size());
 
     params_i_s = {"mat_num", "iface"};
@@ -164,7 +164,7 @@ namespace sys{
     // Initialize empty
     std::fill(mag.begin(), mag.end(), std::vector<double> {0.0, 0.0, 0.0});
     std::fill(j_m.begin(), j_m.end(), std::vector<double> {0.0, 0.0, 0.0});
-    std::fill(sa.begin(), sa.end(), std::vector<double>   {0.0, 0.0, 0.0});
+    //std::fill(sa.begin(), sa.end(), std::vector<double>   {0.0, 0.0, 0.0});
 
 
     // Scalar properties
@@ -188,7 +188,7 @@ namespace sys{
     // Intialise properties from materials
     for (int i=0; i<materials.size(); i++) {
       int lower_bound = floor(materials[i].lower_bound/params_d[0]);
-      int upper_bound = ceil(materials[i].upper_bound/params_d[0]);
+      int upper_bound = floor(materials[i].upper_bound/params_d[0]);
 
       // Magnetization
       std::fill(mag.begin()+lower_bound, mag.begin()+upper_bound+1, materials[i].mag);
@@ -198,6 +198,7 @@ namespace sys{
         std::fill(scal_prop[j].begin()+lower_bound, scal_prop[j].begin()+upper_bound+1, materials[i].scal_prop[j]);
       }
     }
+
 
   }
 
@@ -221,7 +222,15 @@ namespace sys{
         // Number of steps in each interface
         int iface_steps = materials[i].len_diff/params_d[0];
         int lower_bound = floor(materials[i].lower_bound/params_d[0]);
-        int upper_bound = ceil(materials[i].upper_bound/params_d[0]);
+        int upper_bound = floor(materials[i].upper_bound/params_d[0]);
+
+        // Set mag
+        for (int k=0; k<iface_steps; k++) {
+          // Left
+          mag[lower_bound-iface_steps+k] = materials[i].mag;
+          // Right
+          mag[upper_bound+iface_steps-k] = materials[i].mag;
+        }
 
         // Forward declare
         double left_step;
@@ -235,11 +244,11 @@ namespace sys{
           if (i==materials.size()-1) {right_step = materials[i].scal_prop[j]/iface_steps;}
           else {right_step = (materials[i+1].scal_prop[j]-materials[i].scal_prop[j])/iface_steps;}
 
-          for (int k=0; k<iface_steps; k++){
+          for (int k=0; k<iface_steps; k++) {
             // Left
             scal_prop[j][lower_bound-iface_steps+k] += (left_step*k);
             // Right
-            scal_prop[j][+upper_bound+iface_steps-k] -= (right_step*k);
+            scal_prop[j][upper_bound+iface_steps-k] -= (right_step*k);
 
           }
 
@@ -252,6 +261,9 @@ namespace sys{
     case 2:
 
       break;
+    }
+    for (int i=0; i<sa.size(); i++) {
+      sa[i] = {scal_prop[0][i], scal_prop[0][i], scal_prop[0][i]};
     }
   }
 
@@ -284,6 +296,23 @@ namespace sys{
   void system_t::evolve(){
 
     for (int i=0; i<ceil(params_d[2]/params_d[1]); i++) {
+
+      // Output data here
+      std::string filename = std::to_string(i)+ ".dat";
+      std::ofstream myfile;
+      myfile.open(filename);
+      for(int k=0; k<sa.size(); k++) {
+        myfile << k*params_d[0] << ' ';
+        for (int l=0; l<j_m[k].size(); l++){
+          myfile << j_m[k][l] << ' ';
+        }
+        for (int l=0; l<sa[k].size(); l++) {
+          myfile << sa[k][l] << ' ';
+        }
+        myfile << std::endl;
+      }
+      myfile.close();
+
       // Calculate spin current across the system
       j_m = physics::spin_curr(sa, mag, scal_prop[1], scal_prop[2], scal_prop[3], params_d[3], params_d[0]);
 
@@ -295,22 +324,6 @@ namespace sys{
           sa[k][l] += dm_dt[k][l];
         }
       }
-
-      // Output data here
-      std::string filename = std::to_string(i)+ ".dat";
-      std::ofstream myfile;
-      myfile.open(filename);
-      for(int k=0; k<sa.size(); k++) {
-        myfile << k*params_d[0] << ' ';
-        for(int l=0; l<sa[k].size(); l++) {
-          myfile << sa[k][l] << ' ';
-        }
-        myfile << std::endl;
-      }
-      myfile.close();
-
     }
-
   }
-
 }
