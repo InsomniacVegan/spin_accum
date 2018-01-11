@@ -1,9 +1,10 @@
 # Begin with system parameters
 system:mat_num = 5
 system:dx      = 1.0e-11
-system:dt      = 1e-21
-system:T       = 100e-21
-system:j_e     = 1e11
+system:dt      = 1e-20
+system:T       = 25e-20
+system:j_e     = 0e11
+system:t_ramp  = 1e-12
 system:iface   = 1
 
 # Left material: NM

@@ -22,7 +22,7 @@
 #include <algorithm>
 #include <cmath>
 
-// Material struct
+// Own headers
 #include "system.hpp"
 #include "material.hpp"
 #include "term.hpp"
@@ -263,7 +263,7 @@ namespace sys{
       break;
     }
     for (int i=0; i<sa.size(); i++) {
-      sa[i] = {scal_prop[0][i], scal_prop[0][i], scal_prop[0][i]};
+      sa[i] = {scal_prop[0][i]*mag[i][0], scal_prop[0][i]*mag[i][1], scal_prop[0][i]*mag[i][2]};
     }
   }
 
@@ -296,6 +296,9 @@ namespace sys{
   void system_t::evolve(){
 
     for (int i=0; i<ceil(params_d[2]/params_d[1]); i++) {
+      double j_e;
+      if ((i*params_d[1])<params_d[4]) j_e = (params_d[3]*i)/(params_d[4]/params_d[1]);
+      else j_e = params_d[3];
 
       // Output data here
       std::string filename = std::to_string(i)+ ".dat";
@@ -314,7 +317,7 @@ namespace sys{
       myfile.close();
 
       // Calculate spin current across the system
-      j_m = physics::spin_curr(sa, mag, scal_prop[1], scal_prop[2], scal_prop[3], params_d[3], params_d[0]);
+      j_m = physics::spin_curr(sa, mag, scal_prop[1], scal_prop[2], scal_prop[3], j_e, params_d[0]);
 
       std::vector<std::vector<double> > dm_dt = physics::dm_dt(sa, mag, j_m, scal_prop[4], scal_prop[5], scal_prop[6], scal_prop[0], params_d[0]);
 

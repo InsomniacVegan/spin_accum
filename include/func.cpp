@@ -43,10 +43,11 @@ namespace func {
       grad[grad.size()-1][i] = (vec[vec.size()-1][i]-vec[vec.size()-2][i])/(stepsize);
     }
 
-    for(int i=1; i<grad.size()-1; i++){
-      for(int j=0; j<grad[i].size(); j++){
+    for(int i=1; i<vec.size()-1; i++){
+      for(int j=0; j<vec[i].size(); j++){
         grad[i][j] = (vec[i+1][j]-vec[i-1][j])/(2*stepsize);
       }
+
     }
 
     return grad;
