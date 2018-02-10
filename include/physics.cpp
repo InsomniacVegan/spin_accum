@@ -33,9 +33,6 @@
 #include "func.hpp"
 
 namespace physics{
-
-  int counter = 0;
-
   // Calculate the spin current across the system
   std::vector<std::vector<double> > spin_curr(std::vector<std::vector<double> > spin_accum,
                                               std::vector<std::vector<double> > mag,
@@ -44,24 +41,23 @@ namespace physics{
                                               std::vector<double> diff,
                                               double electric_curr,
                                               double stepsize) {
+    // Perform gradient of spin accumulation
+    // Doing this inside the function allows for integration method to be independent
     std::vector<std::vector<double> > spin_accum_grad = func::gradient(spin_accum, stepsize);
+
+    // Empty spin current vector
     std::vector<std::vector<double> > j_m(spin_accum_grad.size(), std::vector<double>(3));
 
-
-    std::string filename = std::to_string(counter)+ "_j_m.dat";
-    std::ofstream file;
-    file.open(filename);
-
+    // Iterate over space
     for(int i=0; i<spin_accum_grad.size(); i++) {
+      // Iterate over dimensions
       for(int j=0; j<spin_accum_grad[i].size(); j++) {
-        j_m[i][j] = spin_polar_con[i]*electric_curr*mag[i][j] - ((2.0*diff[i])*(spin_accum_grad[i][j]-(spin_polar_con[i]*spin_polar_diff[i]*mag[i][j]*(func::dot(mag[i],spin_accum_grad[i])))));
+        // J_m = B*M*j_e - 2D[dm_dx - B*B'*M(M.dm_dx)]
+        j_m[i][j] = spin_polar_con[i]*electric_curr*mag[i][j] -
+          ((2.0*diff[i])*(spin_accum_grad[i][j]-(spin_polar_con[i]*spin_polar_diff[i]*mag[i][j]*(func::dot(mag[i],spin_accum_grad[i])))));
       }
-
-      file << i << " " << j_m[i][0] << " " << j_m[i][1] << " " << j_m[i][2] << " " << spin_accum_grad[i][0] << " " << spin_accum_grad[i][1] << " " << spin_accum_grad[i][2] << std::endl;
     }
 
-    counter++;
-    file.close();
 
     return j_m;
   }

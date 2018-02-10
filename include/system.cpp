@@ -35,24 +35,27 @@ namespace sys{
 
   // System constructor
   system_t::system_t() {
+    // DOUBLE system parameters, add string flag to track a new parameter
     params_d_s = {"dx", "dt", "T", "j_e", "t_ramp"};
     params_d.resize(params_d_s.size());
 
-    params_i_s = {"mat_num", "iface"};
+    // INTEGER system parameters, add string flag to track a new parameter
+    params_i_s = {"mat_num", "iface", "t_fout"};
     params_i.resize(params_i_s.size());
   }
 
   // Takes a parameter name and value as strings and sets the value
   void system_t::set_param(std::string property_s, std::string value_s) {
+    // Attempt to find location of property as string in DOUBLE and set value
     auto prop_id = std::find(params_d_s.begin(), params_d_s.end(), property_s);
     if (prop_id != params_d_s.end()){
       params_d[prop_id-params_d_s.begin()] = std::stod(value_s);
-
-
     }
 
+    // Otherwise attempt to find location of property as string in INTEGER and set value
     else {
       prop_id = std::find(params_i_s.begin(), params_i_s.end(), property_s);
+      // Check property string exists
       if (prop_id != params_i_s.end()){
         params_i[prop_id-params_i_s.begin()] = std::stoi(value_s);
 
@@ -63,6 +66,7 @@ namespace sys{
         }
       }
 
+      // Report if unknown property
       else std::cout << term::bold << term::fg_yellow << " Unknown system parameter: "
                      << term::reset << property_s << std::endl;
     }
@@ -137,18 +141,17 @@ namespace sys{
   void system_t::prop_init () {
 
     // Calculate system length
-    // Assume materials go left to right to begin
+    // Assume materials go left to right
     double min_x = materials.front().lower_bound;
     double max_x = materials.back().upper_bound;
 
+    // Find limits of system
     for (int i=0; i<materials.size(); i++) {
       if (materials[i].lower_bound<min_x) min_x = materials[i].lower_bound;
       if (materials[i].upper_bound>max_x) max_x = materials[i].upper_bound;
     }
 
     int system_len = ceil((max_x-min_x)/params_d[0]);
-
-    // Empty out all values
 
     // Vector properties
     // -------------------------
@@ -164,7 +167,6 @@ namespace sys{
     // Initialize empty
     std::fill(mag.begin(), mag.end(), std::vector<double> {0.0, 0.0, 0.0});
     std::fill(j_m.begin(), j_m.end(), std::vector<double> {0.0, 0.0, 0.0});
-    //std::fill(sa.begin(), sa.end(), std::vector<double>   {0.0, 0.0, 0.0});
 
 
     // Scalar properties
@@ -178,8 +180,12 @@ namespace sys{
     // [5] Dephasing length                       (L_phi)
     // [6] Spin-flip length                       (L_sf)
     scal_prop.resize((mat::scal_prop_s.size()), std::vector<double>(system_len));
+
+    // Empty property vector
     for (int i=0; i<scal_prop.size(); i++){
-      std::fill(scal_prop[i].begin(), scal_prop[i].end(), 0.0);
+      std::fill(scal_prop[i].begin(),
+                scal_prop[i].end(),
+                0.0);
     }
 
     // Electrical current
@@ -191,11 +197,15 @@ namespace sys{
       int upper_bound = floor(materials[i].upper_bound/params_d[0]);
 
       // Magnetization
-      std::fill(mag.begin()+lower_bound, mag.begin()+upper_bound+1, materials[i].mag);
+      std::fill(mag.begin()+lower_bound,
+                mag.begin()+upper_bound+1,
+                materials[i].mag);
 
-      // Scalar properties
+      // Scalar properties fill
       for (int j=0; j<materials[i].scal_prop.size(); j++) {
-        std::fill(scal_prop[j].begin()+lower_bound, scal_prop[j].begin()+upper_bound+1, materials[i].scal_prop[j]);
+        std::fill(scal_prop[j].begin()+lower_bound,
+                  scal_prop[j].begin()+upper_bound+1,
+                  materials[i].scal_prop[j]);
       }
     }
 
@@ -236,14 +246,19 @@ namespace sys{
         double left_step;
         double right_step;
 
+        // Apply interface to each material in turn
         for (int j=0; j<materials[i].scal_prop.size(); j++) {
 
+          // Do not apply interface to left/right of system
+          // Left
           if (i==0) {left_step = materials[i].scal_prop[j]/iface_steps;}
           else {left_step = (materials[i].scal_prop[j]-materials[i-1].scal_prop[j])/iface_steps;}
 
+          // Right
           if (i==materials.size()-1) {right_step = materials[i].scal_prop[j]/iface_steps;}
           else {right_step = (materials[i+1].scal_prop[j]-materials[i].scal_prop[j])/iface_steps;}
 
+          // Aply interface condition
           for (int k=0; k<iface_steps; k++) {
             // Left
             scal_prop[j][lower_bound-iface_steps+k] += (left_step*k);
@@ -262,6 +277,8 @@ namespace sys{
 
       break;
     }
+
+    // Set spin accumulation across system to equilibrium values scaled by magnetization
     for (int i=0; i<sa.size(); i++) {
       sa[i] = {scal_prop[0][i]*mag[i][0], scal_prop[0][i]*mag[i][1], scal_prop[0][i]*mag[i][2]};
     }
@@ -295,34 +312,61 @@ namespace sys{
   // Main evolution loop
   void system_t::evolve(){
 
+    // Time loop
     for (int i=0; i<ceil(params_d[2]/params_d[1]); i++) {
+
+      // Ramp electric current
       double j_e;
       if ((i*params_d[1])<params_d[4]) j_e = (params_d[3]*i)/(params_d[4]/params_d[1]);
       else j_e = params_d[3];
 
-      // Output data here
-      std::string filename = std::to_string(i)+ ".dat";
-      std::ofstream myfile;
-      myfile.open(filename);
-      for(int k=0; k<sa.size(); k++) {
-        myfile << k*params_d[0] << ' ';
-        for (int l=0; l<j_m[k].size(); l++){
-          myfile << j_m[k][l] << ' ';
+      // Output every params_i[2] timesteps
+      // TODO: Make more efficient using for loops instead of branching
+      if (i%params_i[2]==0){
+        // Output data here
+
+        // Name file by timestep
+        std::string filename = std::to_string(i)+ ".dat";
+        std::ofstream myfile;
+        myfile.open(filename);
+
+        // Space loop
+        for(int k=0; k<sa.size(); k++) {
+          myfile << k*params_d[0] << ' ';
+
+          // Spin current dimension loop
+          for (int l=0; l<j_m[k].size(); l++){
+            myfile << j_m[k][l] << ' ';
+          }
+
+          // Spin accumulation dimension loop
+          for (int l=0; l<sa[k].size(); l++) {
+            myfile << sa[k][l] << ' ';
+          }
+          // Next line
+          myfile << std::endl;
         }
-        for (int l=0; l<sa[k].size(); l++) {
-          myfile << sa[k][l] << ' ';
-        }
-        myfile << std::endl;
+        myfile.close();
       }
-      myfile.close();
 
       // Calculate spin current across the system
       j_m = physics::spin_curr(sa, mag, scal_prop[1], scal_prop[2], scal_prop[3], j_e, params_d[0]);
 
-      std::vector<std::vector<double> > dm_dt = physics::dm_dt(sa, mag, j_m, scal_prop[4], scal_prop[5], scal_prop[6], scal_prop[0], params_d[0]);
+      // Calculate time derivative of the spin accumulation
+      std::vector<std::vector<double> > dm_dt = physics::dm_dt(sa,
+                                                               mag,
+                                                               j_m,
+                                                               scal_prop[4],
+                                                               scal_prop[5],
+                                                               scal_prop[6],
+                                                               scal_prop[0],
+                                                               params_d[0]);
 
+      // Space loop
       for (int k=0; k<dm_dt.size(); k++) {
+        // Dimension loop
         for (int l=0; l<dm_dt[k].size(); l++){
+          // Basic Euler integration
           dm_dt[k][l] *= params_d[1];
           sa[k][l] += dm_dt[k][l];
         }

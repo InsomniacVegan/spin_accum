@@ -2,9 +2,10 @@
 system:mat_num = 5
 system:dx      = 1.0e-11
 system:dt      = 1e-20
-system:T       = 25e-20
+system:T       = 100000e-20
 system:j_e     = 0e11
 system:t_ramp  = 1e-12
+system:t_fout  = 1000
 system:iface   = 1
 
 # Left material: NM
