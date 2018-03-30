@@ -349,8 +349,14 @@ namespace sys{
         myfile.close();
       }
 
+      std::vector<std::vector<double> > sa_equil = sa;
+      // Set spin accumulation across system to equilibrium values scaled by magnetization
+      for (int i=0; i<sa_equil.size(); i++) {
+        sa_equil[i] = {sa[i][0]-(scal_prop[0][i]*mag[i][0]), sa[i][1]-(scal_prop[0][i]*mag[i][1]), sa[i][2]-(scal_prop[0][i]*mag[i][2])};
+      }
+
       // Calculate spin current across the system
-      j_m = physics::spin_curr(sa, mag, scal_prop[1], scal_prop[2], scal_prop[3], j_e, params_d[0]);
+      j_m = physics::spin_curr(sa_equil, mag, scal_prop[1], scal_prop[2], scal_prop[3], j_e, params_d[0]);
 
       // Calculate time derivative of the spin accumulation
       std::vector<std::vector<double> > dm_dt = physics::dm_dt(sa,

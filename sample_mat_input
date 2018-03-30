@@ -2,10 +2,10 @@
 system:mat_num = 5
 system:dx      = 1.0e-11
 system:dt      = 1e-20
-system:T       = 100000e-20
+system:T       = 10000e-20
 system:j_e     = 0e11
-system:t_ramp  = 1e-12
-system:t_fout  = 1000
+system:t_ramp  = 1e-20
+system:t_fout  = 100
 system:iface   = 1
 
 # Left material: NM
@@ -18,20 +18,20 @@ material[0]:spin_polar_con   = 0.0
 material[0]:spin_polar_dif   = 0.0
 material[0]:len_precess      = 1.0e-20
 material[0]:len_dephase      = 1.0e-20
-material[0]:len_spin_flip    = 2.0e-08
+material[0]:len_spin_flip    = 600.0e-09
 material[0]:len_diff         = 0.0
 
 # Left-center material: FM
 material[1]:lower_bound      = 25.01e-09
 material[1]:upper_bound      = 45.0e-09
 material[1]:magnetization    = [0.0, 0.0, 1.0]
-material[1]:equil_spin_accum = 4.0e7
+material[1]:equil_spin_accum = 3.857e7
 material[1]:diffusivity      = 0.003
 material[1]:spin_polar_con   = 0.5
-material[1]:spin_polar_dif   = 0.7
+material[1]:spin_polar_dif   = 0.9
 material[1]:len_precess      = 4.0e-9
 material[1]:len_dephase      = 4.0e-9
-material[1]:len_spin_flip    = 5.0e-9
+material[1]:len_spin_flip    = 80.0e-9
 material[1]:len_diff         = 3.0e-9
 
 # Center material: NM
@@ -44,7 +44,7 @@ material[2]:spin_polar_con   = 0.0
 material[2]:spin_polar_dif   = 0.0
 material[2]:len_precess      = 1.0e-20
 material[2]:len_dephase      = 1.0e-20
-material[2]:len_spin_flip    = 2.0e-08
+material[2]:len_spin_flip    = 600.0e-09
 material[2]:len_diff         = 0.0
 
 
@@ -52,13 +52,13 @@ material[2]:len_diff         = 0.0
 material[3]:lower_bound      = 55.01e-09
 material[3]:upper_bound      = 75.0e-09
 material[3]:magnetization    = [0.0, 0.0, 1.0]
-material[3]:equil_spin_accum = 4.0e7
+material[3]:equil_spin_accum = 3.857e7
 material[3]:diffusivity      = 0.003
 material[3]:spin_polar_con   = 0.5
-material[3]:spin_polar_dif   = 0.7
+material[3]:spin_polar_dif   = 0.9
 material[3]:len_precess      = 4.0e-9
 material[3]:len_dephase      = 4.0e-9
-material[3]:len_spin_flip    = 5.0e-9
+material[3]:len_spin_flip    = 80.0e-9
 material[3]:len_diff         = 3.0e-9
 
 
@@ -72,5 +72,5 @@ material[4]:spin_polar_con   = 0.0
 material[4]:spin_polar_dif   = 0.0
 material[4]:len_precess      = 1.0e-20
 material[4]:len_dephase      = 1.0e-20
-material[4]:len_spin_flip    = 2.0e-08
+material[4]:len_spin_flip    = 600.0e-09
 material[4]:len_diff         = 0.0
