@@ -49,6 +49,7 @@ namespace physics{
     std::vector<std::vector<double> > j_m(spin_accum_grad.size(), std::vector<double>(3));
 
     // Iterate over space
+    #pragma omp parallel for
     for(int i=0; i<spin_accum_grad.size(); i++) {
       // Iterate over dimensions
       for(int j=0; j<spin_accum_grad[i].size(); j++) {
@@ -77,6 +78,7 @@ namespace physics{
 
 
 
+    #pragma omp parallel for
     for(int i=0; i<dm_dt.size(); i++) {
       // Numerators
       std::vector<double> spin_mag_cross = func::cross(spin_accum[i], mag[i]);
